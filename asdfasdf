@@ -1,0 +1,14 @@
+In this diagram, vhost0 is similar to irb in some bridge domain served by dp-core, and eth0 is one of the l2 interface in this bridge-domain.
+
+In vrouter term, this state is called 'xconnect (cross-connect)', which is, in my understanding, similar to bridging: https://github.com/Juniper/contrail-vrouter/blob/master/dp-core/vr_interface.c#L231
+bridge-domain is a similar concept with linux bridge, and it can have several physical l2-interfaces and one internal l3-interface.
+So when eth0 firstly received arp requests from fabric, dp-core will return arp response, based on the mac address originally assigned to eth0.
+
+Then other compute nodes will send some traffic, such as overlay traffic or self-traffic to that vRouter node.
+
+When overlay traffic is used (it is identified by dp-core, based on udp port or gre header), dp-core will strip outer ip and label, and do vrf routing to the specific vm which the label indicates.
+
+when l3 vxlan is used, it will do route lookup based on the routing table in l3 vrf
+when mpls is used, the label itself identifies the final interface.
+When it receives self traffic, dp-core will use hif_rx in vhost_tx (which, in turn, uses linux function netif_rx, with skb as an argument) to send the traffic to the linux interface, which is vhost0, on vRouter node.
+
